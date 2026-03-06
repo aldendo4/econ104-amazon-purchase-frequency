@@ -1,0 +1,161 @@
+---
+title: "ECON104_Project"
+author: "Group Members: Alden Do, Ulisses Hernandez, Fabian Diaz, and Sai Rachakonda" 
+date: "2026-03-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+set.seed(123)
+
+#Core Packages 
+library(tidyverse)
+library(janitor)
+#Variable Selection
+library(Boruta)
+#Regression + diagnostics 
+library(car)
+library(lmtest)
+library(sandwich)
+#Summary tables 
+library(modelsummary)
+#Normality test 
+library(tseries)
+# Bootstrap + CV
+library(boot)
+library(caret)
+
+#Loading Data 
+df_raw <- read.csv("Amazon Customer Behavior Survey 3.csv", stringsAsFactors = FALSE)
+
+#Cleaning Column Names + Trimming Extra Spaces 
+df <- df_raw %>%
+  clean_names() %>%
+  mutate(across(where(is.character), stringr::str_squish))
+
+#Quick Chekcs 
+glimpse(df)
+dim(df)
+colnames(df) 
+
+```
+
+#1. Economic Theory and Hypothesis 
+## (a) Economic Research Question: 
+Research Question: What platform features and consumer behaviors influence how frequently consumers make purchases on Amazon?
+
+## (b) Economic Theory Review:
+The analysis reveals that the strategic use of customer reviews, advanced product search filters, and features like “save for later” markedly enhance the likelihood of frequent purchases. Global e-commerce has sustained strong growth since the pandemic and is projected to exceed $8 trillion by 2027, indicating a structural shift in consumer purchasing toward digital channels (Uzunoglu, 2024; Lin, 2024). Purchase frequency, defined as the number of transactions per customer within a given timeframe, is a more direct measure of engagement and loyalty than one off conversion (Hohenberg & Taylor, 2020). Online reviews shape purchase intentions and decision confidence (Ahn & Lee, 2024; Chen et al., 2022; Zhang et al., 2018), and that search and filtering facilitate discovery (Deng et al., 2021). Secondly, researchers often examine predictors in isolation, which obscures the joint influence of category cadence and interface use on behaviour. Thirdly, there is a limited operationalization of Amazon's specific affordances, such as the "save for later" feature, review reliability vs. importance, and advanced filters, as potential determinants of repeat purchasing product category, review perceptions (importance and reliability), search method (including filters), “save for later” usage, and browsing frequency relate to the likelihood of purchasing on Amazon a few times per month.Category effects dominate: groceries and clothing/fashion correspond to the highest likelihood of purchasing a few times per month
+Individuals who browse the platform a few times per week are more likely to make purchases on a monthly basis than the sample average.Use of the "save for later" functions are each associated with a higher frequency
+
+Consumer decision-making in online marketplaces can be analyzed using information asymmetry theory and consumer search theory. In online markets like Amazon, buyers cannot physically inspect products before purchase, creating uncertainty about quality. According to Akerlof’s (1970) “Market for Lemons” framework, when information asymmetry exists between buyers and sellers, market efficiency may decline unless credible signals reduce uncertainty. Online reviews function as a signaling mechanism that reduces information asymmetry by providing information about product quality from previous buyers. This increases trust and lowers perceived risk, which can increase the probability and frequency of purchase.
+
+Additionally, consumer search theory (Stigler, 1961) suggests that individuals gather information as long as the marginal benefit of additional information exceeds the marginal cost. On platforms like Amazon, reviews significantly reduce search costs by aggregating product experiences in one place. Lower search costs and increased trust can shift consumer demand outward, increasing purchase frequency. Empirical research also supports this mechanism. For example, Chevalier and Mayzlin (2006) find that positive online reviews significantly increase sales, demonstrating that user-generated content directly influences consumer demand in digital markets.
+
+Source 1: 
+Source 2: 
+
+## (c) Testable Economic Hypothesis
+Based on consumer demand theory, individuals with higher income are expected to spend more on goods and services. Therefore, we hypothesize that income will have a positive relationship with consumer purchasing behavior. In other words, as income increases, the likelihood or amount of consumer purchases should increase. Additionally, greater exposure to advertising is expected to increase consumer awareness and influence purchasing decisions. Therefore, advertising exposure should have a positive effect on purchase behavior.
+
+## (d) Expected Signs of Coefficients:
+Explain the expected direction (+ or -) of key variables based on economic theory.
+
+df <- read.csv("Amazon Customer Behavior Survey 3.csv")
+df <- janitor::clean_names(df) 
+
+# 2. Variable Selection 
+
+## (a) Boruta Algorithm (Quantitative Predictors)
+Explain the Boruta method and include code. 
+```{r}
+# Boruta code here 
+
+```
+
+
+{r} 
+# t-test or ANOVA code here 
+
+## (c) Final Predictor Set 
+List the final predictors chosen for the rest of the analysis. 
+
+# 3. Descripitve Analysis and Exploratory Data Analysis 
+## (a) Dataset Description 
+Describe: dataset source, time period, sample, variable definitions
+
+## (b) Exploratory Visualizations 
+# histograms
+# scatterplots
+# correlation plots
+
+## (c) Descripitve Statistics Table 
+# summary statistics 
+
+## (d) Density Plots 
+# density plots 
+
+## (e) Nonlinearity and Transformations 
+Discuss transformations such as log or polynomial terms 
+
+## (f) Outliers 
+Explain any outliers and how you handled them 
+
+## (g) Missing Data 
+Explain NA removal or imputation 
+
+# 4. Model Building and Selection 
+Model 1 
+#regression model 
+
+Model 2 
+#regreession model
+
+Model 3 
+#regreession model 
+
+Multicollinearity (VIF)
+#VIF test 
+
+Model Misspecification (RESET test)
+#RESET test 
+
+Diagnostic Plots 
+#residual plots 
+
+Model Comparison 
+# AIC / BIC
+Explain:
+
+#5. Model Diagnostics and Robustness 
+Linearity: Residual v. Fitted Plots 
+
+Homoskedasticity 
+#Breusch-Pagan test 
+
+Normality 
+# QQ plot
+# Jarque-Bera test
+
+Outliers and Influence
+# Cook's distance
+
+Bootstrap Analysis
+# bootstrap code
+
+Cross Validation
+# 5-fold or 10-fold CV
+
+# 6. Results and Economic Interpretation
+# regression table
+Explain: coefficient signs,economic meaning, statistical significance, confidence intervals, R²
+
+# 7. Limitations and Extensions
+data limitations, potential bias, possible future research
+
+# 8. Code Quality and Reproducibility
+Explain: reproducibility, seed setting, well-commented code
+
+
