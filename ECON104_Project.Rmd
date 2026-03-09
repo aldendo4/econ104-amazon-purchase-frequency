@@ -44,7 +44,8 @@ colnames(df)
 
 #1. Economic Theory and Hypothesis 
 ## (a) Economic Research Question: 
-Research Question: What platform features and consumer behaviors influence how frequently consumers make purchases on Amazon?
+Research Question: What factors influence the frequency of consumer purchases on Amazon?
+
 
 ## (b) Economic Theory Review:
 The analysis reveals that the strategic use of customer reviews, advanced product search filters, and features like “save for later” markedly enhance the likelihood of frequent purchases. Global e-commerce has sustained strong growth since the pandemic and is projected to exceed $8 trillion by 2027, indicating a structural shift in consumer purchasing toward digital channels (Uzunoglu, 2024; Lin, 2024). Purchase frequency, defined as the number of transactions per customer within a given timeframe, is a more direct measure of engagement and loyalty than one off conversion (Hohenberg & Taylor, 2020). Online reviews shape purchase intentions and decision confidence (Ahn & Lee, 2024; Chen et al., 2022; Zhang et al., 2018), and that search and filtering facilitate discovery (Deng et al., 2021). Secondly, researchers often examine predictors in isolation, which obscures the joint influence of category cadence and interface use on behaviour. Thirdly, there is a limited operationalization of Amazon's specific affordances, such as the "save for later" feature, review reliability vs. importance, and advanced filters, as potential determinants of repeat purchasing product category, review perceptions (importance and reliability), search method (including filters), “save for later” usage, and browsing frequency relate to the likelihood of purchasing on Amazon a few times per month.Category effects dominate: groceries and clothing/fashion correspond to the highest likelihood of purchasing a few times per month
@@ -62,9 +63,6 @@ Based on consumer demand theory, individuals with higher income are expected to 
 
 ## (d) Expected Signs of Coefficients:
 Explain the expected direction (+ or -) of key variables based on economic theory.
-
-df <- read.csv("Amazon Customer Behavior Survey 3.csv")
-df <- janitor::clean_names(df) 
 
 # 2. Variable Selection 
 
