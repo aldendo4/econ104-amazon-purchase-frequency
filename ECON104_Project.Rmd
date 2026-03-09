@@ -1,8 +1,10 @@
 ---
 title: "ECON104_Project"
-author: "Group Members: Alden Do, Ulisses Hernandez, Fabian Diaz, and Sai Rachakonda" 
+author: 'Group Members: Alden Do, Ulisses Hernandez, Fabian Diaz, and Sai Rachakonda'
 date: "2026-03-05"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -10,42 +12,107 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 set.seed(123)
 
-#Core Packages 
+# Core packages
 library(tidyverse)
 library(janitor)
-#Variable Selection
+
+# Variable selection
 library(Boruta)
-#Regression + diagnostics 
+
+# Regression + diagnostics
 library(car)
 library(lmtest)
 library(sandwich)
-#Summary tables 
+
+# Summary tables
 library(modelsummary)
-#Normality test 
+
+# Normality test
 library(tseries)
+
 # Bootstrap + CV
 library(boot)
 library(caret)
+```
 
-#Loading Data 
-df_raw <- read.csv("Amazon Customer Behavior Survey 3.csv", stringsAsFactors = FALSE)
+```{r data_import_cleaning}
+# 1) Import raw data
+# Keep the CSV in the same folder as this .Rmd file
 
-#Cleaning Column Names + Trimming Extra Spaces 
-df <- df_raw %>%
+df_raw <- read.csv("Data/Raw/Amazon Customer Behavior Survey 3.csv", stringsAsFactors = FALSE)
+
+# 2) Standardize variable names and trim extra spaces in text cells
+df_clean <- df_raw %>%
   clean_names() %>%
   mutate(across(where(is.character), stringr::str_squish))
 
-#Quick Chekcs 
-glimpse(df)
-dim(df)
-colnames(df) 
+# 3) Convert categorical variables to factors
+# Treat all character columns as categorical for this survey dataset
+df_clean <- df_clean %>%
+  mutate(across(where(is.character), as.factor))
 
+# 4) Flag missing values (do not remove yet)
+# Convert blank strings to NA first so they are counted properly
+
+df_clean <- df_clean %>%
+  mutate(across(where(is.factor), ~ forcats::fct_explicit_na(., na_level = "Missing")))
+
+missing_summary <- tibble(
+  variable = names(df_clean),
+  missing_count = sapply(df_clean, function(x) sum(is.na(x) | x == "Missing")),
+  missing_percent = round(sapply(df_clean, function(x) mean(is.na(x) | x == "Missing")) * 100, 2)
+)
+
+# 5) Flag numeric outliers using the IQR rule
+# Do NOT delete observations yet; just create indicator columns
+
+numeric_vars <- df_clean %>%
+  select(where(is.numeric)) %>%
+  names()
+
+for (v in numeric_vars) {
+  q1 <- quantile(df_clean[[v]], 0.25, na.rm = TRUE)
+  q3 <- quantile(df_clean[[v]], 0.75, na.rm = TRUE)
+  iqr_value <- q3 - q1
+  lower_bound <- q1 - 1.5 * iqr_value
+  upper_bound <- q3 + 1.5 * iqr_value
+
+  df_clean[[paste0(v, "_outlier_flag")]] <- ifelse(
+    is.na(df_clean[[v]]),
+    NA,
+    df_clean[[v]] < lower_bound | df_clean[[v]] > upper_bound
+  )
+}
+
+# 6) Quick checks
+
+glimpse(df_clean)
+dim(df_clean)
+colnames(df_clean)
+missing_summary
 ```
+
+## Variables Description
+
+## Variables Description
+
+| Variable Name | Definition (in words) | Units | Type | Expected Sign |
+|---|---|---|---|---|
+| purchase_frequency | How often a respondent makes purchases on Amazon | Ordered frequency category | Factor | Dependent variable |
+| purchase_categories | Product categories most frequently purchased | Category | Factor | ? |
+| browsing_frequency | How often a respondent browses Amazon | Ordered frequency category | Factor | + |
+| customer_reviews_importance | Importance of online reviews in purchase decisions | Rating scale | Numeric | + |
+| add_to_cart_browsing | Whether the respondent adds items to cart while browsing | Category | Factor | + |
+| saveforlater_frequency | How often the respondent uses the save-for-later feature | Ordered frequency category | Factor | + |
+| recommendation_helpfulness | Whether personalized recommendations are considered helpful | Category | Factor | + |
+| rating_accuracy | Perceived accuracy of product ratings | Rating scale | Numeric | + |
+| shopping_satisfaction | Overall satisfaction with Amazon shopping experience | Rating scale | Numeric | + |
+| age | Respondent age | Years | Numeric | ? |
+| gender | Respondent gender | Category | Factor | ? |
 
 #1. Economic Theory and Hypothesis 
 ## (a) Economic Research Question: 
-Research Question: What factors influence the frequency of consumer purchases on Amazon?
-
+Research Question: What platform features and consumer behaviors influence how frequently consumers make purchases on Amazon?
 
 ## (b) Economic Theory Review:
 The analysis reveals that the strategic use of customer reviews, advanced product search filters, and features like “save for later” markedly enhance the likelihood of frequent purchases. Global e-commerce has sustained strong growth since the pandemic and is projected to exceed $8 trillion by 2027, indicating a structural shift in consumer purchasing toward digital channels (Uzunoglu, 2024; Lin, 2024). Purchase frequency, defined as the number of transactions per customer within a given timeframe, is a more direct measure of engagement and loyalty than one off conversion (Hohenberg & Taylor, 2020). Online reviews shape purchase intentions and decision confidence (Ahn & Lee, 2024; Chen et al., 2022; Zhang et al., 2018), and that search and filtering facilitate discovery (Deng et al., 2021). Secondly, researchers often examine predictors in isolation, which obscures the joint influence of category cadence and interface use on behaviour. Thirdly, there is a limited operationalization of Amazon's specific affordances, such as the "save for later" feature, review reliability vs. importance, and advanced filters, as potential determinants of repeat purchasing product category, review perceptions (importance and reliability), search method (including filters), “save for later” usage, and browsing frequency relate to the likelihood of purchasing on Amazon a few times per month.Category effects dominate: groceries and clothing/fashion correspond to the highest likelihood of purchasing a few times per month
@@ -68,20 +135,26 @@ Explain the expected direction (+ or -) of key variables based on economic theor
 
 ## (a) Boruta Algorithm (Quantitative Predictors)
 Explain the Boruta method and include code. 
-```{r}
-# Boruta code here 
+```{r boruta}
+boruta_model <- Boruta(purchase_frequency ~ ., data = df_clean)
 
+print(boruta_model)
+plot(boruta_model)
 ```
 
-
-{r} 
-# t-test or ANOVA code here 
+## (b) Group Comparison Test
+```{r group-comparison}
+# t-test or ANOVA code here
+```
 
 ## (c) Final Predictor Set 
 List the final predictors chosen for the rest of the analysis. 
 
 # 3. Descripitve Analysis and Exploratory Data Analysis 
 ## (a) Dataset Description 
+```{r summary}
+summary(df_clean)
+```
 Describe: dataset source, time period, sample, variable definitions
 
 ## (b) Exploratory Visualizations 
@@ -155,5 +228,4 @@ data limitations, potential bias, possible future research
 
 # 8. Code Quality and Reproducibility
 Explain: reproducibility, seed setting, well-commented code
-
 
