@@ -1,10 +1,8 @@
 ---
 title: "ECON104_Project"
-author: 'Group Members: Alden Do, Ulisses Hernandez, Fabian Diaz, and Sai Rachakonda'
+author: "Group Members: Alden Do, Ulisses Hernandez, Fabian Diaz, and Sai Rachakonda" 
 date: "2026-03-05"
-output:
-  html_document: default
-  pdf_document: default
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -12,103 +10,37 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 set.seed(123)
 
-# Core packages
+#Core Packages 
 library(tidyverse)
 library(janitor)
-
-# Variable selection
+#Variable Selection
 library(Boruta)
-
-# Regression + diagnostics
+#Regression + diagnostics 
 library(car)
 library(lmtest)
 library(sandwich)
-
-# Summary tables
+#Summary tables 
 library(modelsummary)
-
-# Normality test
+#Normality test 
 library(tseries)
-
 # Bootstrap + CV
 library(boot)
 library(caret)
-```
 
-```{r data_import_cleaning}
-# 1) Import raw data
-# Keep the CSV in the same folder as this .Rmd file
+#Loading Data 
+df_raw <- read.csv("Amazon Customer Behavior Survey 3.csv", stringsAsFactors = FALSE)
 
-df_raw <- read.csv("Data/Raw/Amazon Customer Behavior Survey 3.csv", stringsAsFactors = FALSE)
-
-# 2) Standardize variable names and trim extra spaces in text cells
-df_clean <- df_raw %>%
+#Cleaning Column Names + Trimming Extra Spaces 
+df <- df_raw %>%
   clean_names() %>%
   mutate(across(where(is.character), stringr::str_squish))
 
-# 3) Convert categorical variables to factors
-# Treat all character columns as categorical for this survey dataset
-df_clean <- df_clean %>%
-  mutate(across(where(is.character), as.factor))
+#Quick Chekcs 
+glimpse(df)
+dim(df)
+colnames(df) 
 
-# 4) Flag missing values (do not remove yet)
-# Convert blank strings to NA first so they are counted properly
-
-df_clean <- df_clean %>%
-  mutate(across(where(is.factor), ~ forcats::fct_explicit_na(., na_level = "Missing")))
-
-missing_summary <- tibble(
-  variable = names(df_clean),
-  missing_count = sapply(df_clean, function(x) sum(is.na(x) | x == "Missing")),
-  missing_percent = round(sapply(df_clean, function(x) mean(is.na(x) | x == "Missing")) * 100, 2)
-)
-
-# 5) Flag numeric outliers using the IQR rule
-# Do NOT delete observations yet; just create indicator columns
-
-numeric_vars <- df_clean %>%
-  select(where(is.numeric)) %>%
-  names()
-
-for (v in numeric_vars) {
-  q1 <- quantile(df_clean[[v]], 0.25, na.rm = TRUE)
-  q3 <- quantile(df_clean[[v]], 0.75, na.rm = TRUE)
-  iqr_value <- q3 - q1
-  lower_bound <- q1 - 1.5 * iqr_value
-  upper_bound <- q3 + 1.5 * iqr_value
-
-  df_clean[[paste0(v, "_outlier_flag")]] <- ifelse(
-    is.na(df_clean[[v]]),
-    NA,
-    df_clean[[v]] < lower_bound | df_clean[[v]] > upper_bound
-  )
-}
-
-# 6) Quick checks
-
-glimpse(df_clean)
-dim(df_clean)
-colnames(df_clean)
-missing_summary
 ```
-
-## Variables Description
-
-## Variables Description
-
-| Variable Name | Definition (in words) | Units | Type | Expected Sign |
-|---|---|---|---|---|
-| purchase_frequency | How often a respondent makes purchases on Amazon | Ordered frequency category | Factor | Dependent variable |
-| purchase_categories | Product categories most frequently purchased | Category | Factor | ? |
-| browsing_frequency | How often a respondent browses Amazon | Ordered frequency category | Factor | + |
-| customer_reviews_importance | Importance of online reviews in purchase decisions | Rating scale | Numeric | + |
-| add_to_cart_browsing | Whether the respondent adds items to cart while browsing | Category | Factor | + |
-| saveforlater_frequency | How often the respondent uses the save-for-later feature | Ordered frequency category | Factor | + |
-| recommendation_helpfulness | Whether personalized recommendations are considered helpful | Category | Factor | + |
-| rating_accuracy | Perceived accuracy of product ratings | Rating scale | Numeric | + |
-| shopping_satisfaction | Overall satisfaction with Amazon shopping experience | Rating scale | Numeric | + |
-| age | Respondent age | Years | Numeric | ? |
-| gender | Respondent gender | Category | Factor | ? |
 
 #1. Economic Theory and Hypothesis 
 ## (a) Economic Research Question: 
@@ -129,32 +61,77 @@ Source 2:
 Based on consumer demand theory, individuals with higher income are expected to spend more on goods and services. Therefore, we hypothesize that income will have a positive relationship with consumer purchasing behavior. In other words, as income increases, the likelihood or amount of consumer purchases should increase. Additionally, greater exposure to advertising is expected to increase consumer awareness and influence purchasing decisions. Therefore, advertising exposure should have a positive effect on purchase behavior.
 
 ## (d) Expected Signs of Coefficients:
-Explain the expected direction (+ or -) of key variables based on economic theory.
+
+**Perceived importance and reliability of customer reviews (+):**  
+When shopping online, such as on Amazon, consumers cannot directly examine products before purchasing. This creates uncertainty about product quality. Customer reviews help reduce that uncertainty by giving information from previous buyers and increasing consumer confidence. Consumers who see reviews as important and trustworthy are more likely to feel comfortable making purchases, so the expected sign is positive.
+
+**Use of search filters and advanced search tools (+):**  
+Using search filters and advanced search tools should have a positive relationship with purchase frequency. These tools make it easier for consumers to narrow down the large number of products on Amazon and quickly find items that match their preferences. By reducing the time and effort required to search, these features lower search costs and make purchases more likely.
+
+**“Save for Later” feature (+):**  
+The “Save for Later” feature is also expected to have a positive coefficient. This feature allows consumers to keep track of products they are interested in without purchasing immediately. By making it easier to return to those items later, it increases the likelihood that consumers eventually complete the purchase.
+
+**Browsing frequency (+):**  
+Browsing frequency is expected to have a positive effect on purchase frequency. Consumers who browse Amazon more often are exposed to more products, recommendations, and promotions. Greater exposure increases the chances that they will find something they want to buy.
+
+**Product category effects (+ / - depending on category):**  
+Product category may also affect purchase frequency. Categories such as groceries and clothing are usually purchased more regularly, so they are expected to be positively associated with purchase frequency. In contrast, categories such as electronics are often bought less frequently because they are more expensive and more durable, so their effect may be smaller or negative relative to frequently purchased goods.
+
+**Summary:**  
+Overall, variables that reduce uncertainty, lower search costs, or increase consumer engagement are expected to have a positive relationship with purchase frequency on Amazon. 
 
 # 2. Variable Selection 
 
 ## (a) Boruta Algorithm (Quantitative Predictors)
-Explain the Boruta method and include code. 
-```{r boruta}
-boruta_model <- Boruta(purchase_frequency ~ ., data = df_clean)
 
+To identify the most important quantitative predictors of purchase frequency, we use the Boruta feature selection algorithm. Boruta is a wrapper method based on random forests that evaluates the importance of each variable by comparing it to randomized versions of the same variables. Variables that consistently perform better than their randomized counterparts are considered important predictors.
+
+For this analysis, we used the Boruta package with the default random forest parameters and 100 maximum runs.
+
+The Boruta algorithm identified four confirmed important predictors of purchase frequency: customer_reviews_importance, personalized_recommendation_frequency, rating_accuracy, and shopping_satisfaction. One additional variable, age, was classified as tentative but still potentially relevant. This analysis examines several variables that may explain differences in purchase frequency, and five quantitative predictors were selected for the final analysis.
+
+```{r}
+# Convert purchase frequency to numeric for Boruta
+df$purchase_frequency_num <- as.numeric(as.factor(df$purchase_frequency))
+
+# Keep only numeric variables
+numeric_vars <- df %>%
+  select(where(is.numeric))
+
+# Run Boruta
+boruta_model <- Boruta(purchase_frequency_num ~ ., data = numeric_vars, maxRuns = 100)
+
+# View results
 print(boruta_model)
+
+# Plot variable importance
 plot(boruta_model)
 ```
 
-## (b) Group Comparison Test
-```{r group-comparison}
-# t-test or ANOVA code here
+To identify relevant categorical predictors, we conducted ANOVA tests to examine whether differences in purchase frequency were associated with gender, purchase categories, and browsing frequency. The results indicate that gender and purchase categories do not significantly affect purchase frequency at conventional significance levels. Browsing frequency shows the strongest relationship with purchase frequency (p ≈ 0.092), suggesting that consumers who browse the platform more frequently may be more likely to make purchases. Based on these exploratory results, browsing frequency and purchase categories were selected as factor variables for the remaining analysis.
+
+```{r}
+# Convert categorical variables to factors
+df$gender <- as.factor(df$gender)
+df$purchase_categories <- as.factor(df$purchase_categories)
+df$browsing_frequency <- as.factor(df$browsing_frequency)
+
+# ANOVA tests
+anova_gender <- aov(purchase_frequency_num ~ gender, data = df)
+summary(anova_gender)
+
+anova_category <- aov(purchase_frequency_num ~ purchase_categories, data = df)
+summary(anova_category)
+
+anova_browsing <- aov(purchase_frequency_num ~ browsing_frequency, data = df)
+summary(anova_browsing)
 ```
 
 ## (c) Final Predictor Set 
-List the final predictors chosen for the rest of the analysis. 
+Based on the Boruta algorithm and exploratory analysis of categorical variables, the final predictors used in the remainder of the analysis include the quantitative variables customer_reviews_importance, personalized_recommendation_frequency, rating_accuracy, shopping_satisfaction, and age. In addition, the factor variables purchase_categories and browsing_frequency are included to capture differences in consumer purchasing behavior across product types and browsing habits. 
 
 # 3. Descripitve Analysis and Exploratory Data Analysis 
 ## (a) Dataset Description 
-```{r summary}
-summary(df_clean)
-```
 Describe: dataset source, time period, sample, variable definitions
 
 ## (b) Exploratory Visualizations 
