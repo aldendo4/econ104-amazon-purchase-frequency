@@ -132,7 +132,8 @@ Based on the Boruta algorithm and exploratory analysis of categorical variables,
 
 # 3. Descripitve Analysis and Exploratory Data Analysis 
 ## (a) Dataset Description 
-Describe: dataset source, time period, sample, variable definitions
+The data used in this project comes from the Amazon Customer Behavior Survey. The Amazon Customer Behavior Survey provides information on how customers interact with the Amazon platform and make purchasing decisions.  In total, the data includes 602 responses along with information on demographics and online shopping behavior.
+Some of the main variables include age, gender, purchase frequency, browsing frequency, purchase categories, the importance of customer reviews, personalized recommendation frequency, rating accuracy, and overall shopping satisfaction. In this analysis, purchase frequency is treated as the main outcome variable because the goal of the project is to understand what factors influence how often consumers make purchases on Amazon. Since the data was collected through a survey at a single point in time, the dataset can be considered cross-sectional.s
 
 ## (b) Exploratory Visualizations 
 # histograms
